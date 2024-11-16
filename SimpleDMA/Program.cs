@@ -1,26 +1,26 @@
 ﻿using KMBox.NET;
+using KMBox.NET.Structures;
 using SimpleDMA.SimpleDMA;
 using System.Net;
 using Vmmsharp;
 
-namespace SimpleDMABase {
+namespace SimpleDMA {
     public class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             /*=======================================================================================================
                PLEASE PLACE THE DLLs PROVIDED BY YOUR VENDOR INTO THE "libs" FOLDER AND REFERENCE THEM IN YOUR PROJECT
+
+               EDIT KMBOX SETTINGS JSON TO SETUP YOUR KMBOX CONNECTION
              ========================================================================================================*/
 
 
-            // INPUTS
-            KmBoxClient kmBoxClient = new KmBoxClient(IPAddress.Parse("YOUR KMBOX IP"), /* YOUR KMBOX PORT */ 0, "YOUR KMBOX UUID");
-            SimpleInput simpleInput = new SimpleInput(kmBoxClient);
+            // KMBox
+            SimpleInput simpleInput = new SimpleInput();
 
-            // MEMORY
-            SimpleMem simpleMem = new SimpleMem("YOUR VMM DEVICE");
-            VmmProcess process = simpleMem.ReadProcess("YOUR PROCESS");
-            ulong moduleBase = simpleMem.GetModuleBase(process, "YOUR MODULE");
+            // DMA Read
+            SimpleMem simpleMem = new SimpleMem();
         }
     }
 }

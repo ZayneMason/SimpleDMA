@@ -1,67 +1,127 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 using KMBox.NET;
 using KMBox.NET.Structures;
+using System.Text.Json;
+using System.Net;
+using System.Runtime.Versioning;
+using System.ComponentModel;
 
 
 namespace SimpleDMA.SimpleDMA
 {
+    internal class ConnectionInfo
+    {
+        public string Ip { get; set; }
+        public int Port { get; set; }
+        public string Uuid { get; set; }
+    }
+
     internal class SimpleInput
     {
-        KmBoxClient KmBoxClient { get; set; }
-
-        public SimpleInput(KmBoxClient kmBoxClient)
+        private KmBoxClient KmBoxClient { get; set; }
+        public SimpleInput()
         {
-            this.KmBoxClient = kmBoxClient;
+            string filePath = Directory.GetCurrentDirectory() + "\\KMBoxSettings.json";
+
+            try
+            {
+                string jsonString = File.ReadAllText(filePath);
+
+                ConnectionInfo connection = JsonSerializer.Deserialize<ConnectionInfo>(jsonString);
+
+                this.KmBoxClient = new KmBoxClient(IPAddress.Parse(connection.Ip), connection.Port, connection.Uuid);
+                this.KmBoxClient.Connect();
+                Console.WriteLine("Connected to KMBox.");
+            }
+            catch (FileNotFoundException)
+            {
+                Console.WriteLine($"Error: The file {filePath} was not found.");
+            }
+            catch (JsonException)
+            {
+                Console.WriteLine("Error: The JSON format is invalid.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An unexpected error occurred: {ex.Message}");
+            }
         }
 
-        public void MoveMouse(Vector2 position)
+        public Task<bool> MoveMouse(Vector2 position)
         {
-            KmBoxClient.MouseMoveSimple((short)position.X, (short)position.Y);
+            return KmBoxClient.MouseMoveSimple((short)position.X, (short)position.Y);
         }
 
-        public void Click(MouseButton button)
+        public Task<bool> Click(MouseButton button)
         {
-            KmBoxClient.MouseClick(button);
+            return KmBoxClient.MouseClick(button);
         }
 
-        public void LeftClick()
+        public Task<bool> LeftClick()
         {
-            KmBoxClient.MouseClick();
+            return KmBoxClient.MouseClick();
         }
 
-        public void RightClick()
+        public Task<bool> RightClick()
         {
-            KmBoxClient.MouseClick();
+            return KmBoxClient.MouseClick();
         }
 
-        public void MiddleClick()
+        public Task<bool> MiddleClick()
         {
-            KmBoxClient.MouseMiddleClick();
+            return KmBoxClient.MouseMiddleClick();
         }
 
-        public void Scroll(int amount)
+        public Task<bool> Scroll(int amount)
         {
-            KmBoxClient.MouseWheel(amount);
+            return KmBoxClient.MouseWheel(amount);
         }
 
-        public void MoveMouseSmoothly(Vector2 position, uint speed, Vector2 start, Vector2 end)
+        public Task<bool> MoveMouseSmoothly(Vector2 position, uint speed, Vector2 curvePoint, Vector2 end)
         {
-            KmBoxClient.MouseMoveBezier((short)position.X, (short)position.Y, speed, (short)start.X, (short)start.Y, (short)end.X, (short)end.Y);
+            return KmBoxClient.MouseMoveBezier((short)position.X, (short)position.Y, speed, (short)curvePoint.X, (short)curvePoint.Y, (short)end.X, (short)end.Y);
         }
 
-        public void KeyPress(KeyboardButton button)
+        public Task<bool> MoveMouseSmoothlyRandomSpeed(Vector2 position, uint min, uint max, Vector2 curvePoint, Vector2 end)
         {
-            KmBoxClient.KeyboardButtonDown(button);
+            Random random = new Random();
+            return KmBoxClient.MouseMoveBezier((short)position.X, (short)position.Y, (uint)random.NextInt64(min, max), (short)curvePoint.X, (short)curvePoint.Y, (short)end.X, (short)end.Y);
         }
 
-        public void KeysUp()
+        public Task<bool> KeyPress(KeyboardButton button, KeyboardModifiers modifiers = 0)
         {
-            KmBoxClient.AllKeyboardButtonsUp();
+            return KmBoxClient.KeyboardButtonDown(button, modifiers);
+        }
+
+        public Task<bool> KeysUp()
+        {
+            return KmBoxClient.AllKeyboardButtonsUp();
+        }
+
+        public async Task<bool> TypeText(string text, int delay = 80)
+        {
+            return await KmBoxClient.TypeText(text, delay);
+        }
+
+        public ReportListener CreateReportListener()
+        {
+            return KmBoxClient.CreateReportListener();
+        }
+
+        public async Task<bool> MaskKey(KeyboardButton button)
+        {
+            return await KmBoxClient.MaskKeyboardButton(button);
+        }
+
+        public async Task<bool> MaskMouseButton(MouseMasks button)
+        {
+            return await KmBoxClient.MaskMouseInput(button);
+        }
+
+        public async Task<bool> UnmaskInputs()
+        {
+            return await KmBoxClient.UnmaskAllInput();
         }
     }
 }
